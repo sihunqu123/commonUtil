@@ -1,8 +1,13 @@
 ﻿package util.commonUtil;
 
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 // import javax.servlet.http.HttpServletRequest;
 // import javax.servlet.http.HttpSession;
 import java.security.MessageDigest;
@@ -781,6 +786,41 @@ public abstract class CommonUtil {
   // return request.getRemoteAddr() + "|" + request.getRemoteHost() + ":" + request.getRemotePort()
   // + "|" + request.getRemoteUser();
   // }
+
+
+	public static boolean isInJar() {
+		String resource = CommonUtil.class.getResource("CommonUtil.class").toString();
+		boolean isInJar = resource.startsWith("jar");
+		ComLogUtil.info("resource:" + resource
+				+ ", isInJar:" + isInJar
+				);
+		return isInJar;
+	}
+	
+
+	public static void copyExeOutFrmJar(URL inputFileURL, String outputFilePath) throws IOException {
+		//gets program.exe from inside the JAR file as an input stream
+		InputStream is;
+		try {
+			is = inputFileURL.openStream();
+			//sets the output stream to a system folder
+			OutputStream os = new FileOutputStream(outputFilePath);
+
+			//2048 here is just my preference
+			byte[] b = new byte[2048];
+			int length;
+
+			while ((length = is.read(b)) != -1) {
+			    os.write(b, 0, length);
+			}
+			is.close();
+			os.close();
+		} catch (IOException e) {
+			ComLogUtil.info("copy " + inputFileURL + " to: " + outputFilePath + " failed");
+			throw e;
+		}
+		ComLogUtil.info("copye " + inputFileURL + " to: " + outputFilePath);
+	}
 
 
   public static void main(String[] args) throws Exception{

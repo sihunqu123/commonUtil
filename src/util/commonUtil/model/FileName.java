@@ -3,6 +3,9 @@ package util.commonUtil.model;
 import java.io.File;
 
 import util.commonUtil.ComFileUtil;
+import util.commonUtil.ComLogUtil;
+import util.commonUtil.ComRegexUtil;
+import util.commonUtil.ComStrUtil;
 
 /**
  * file "Name" operator
@@ -25,7 +28,7 @@ public class FileName {
 	}
 	
 	/**
-	 * append on the filename part.
+	 * append on the filenameOnly part before the extension. e.g. a.txt append "-suffix" => a-suffix.txt
 	 * @param str
 	 * @return
 	 */
@@ -44,18 +47,54 @@ public class FileName {
 		return this;
 	}
 	
+	/**
+	 * set the filename only part. e.g. a.txt setFileName("newFileName") => newFileName.txt
+	 * @param str
+	 * @return
+	 */
+	public FileName setFileName(String str) {
+		this.fileInfo.setFileName(str);
+		return this;
+	}
+
+	public String getFileNameOnly() {
+		return fileInfo.getFileName();
+	}
+	
+	public String getFileNameAndExtension() {
+		return fileInfo.getFileName() + fileInfo.getFileExt();
+	}
+	
 	public FileName setExt(String ext) {
 		this.fileInfo.setFileExt(ext);
 		return this;
 	}
 	
-	public FileName getExt() {
-		this.fileInfo.getFileExt();
-		return this;
+	public String getExt() {
+		return this.fileInfo.getFileExt();
 	}
 	
-	public FileName getExt(boolean needDot) {
-		this.fileInfo.getFileExt(needDot);
+	public String getExt(boolean needDot) {
+		return this.fileInfo.getFileExt(needDot);
+	}
+	
+	public String getDir() {
+		return this.fileInfo.getDir();
+	}
+	
+	public FileName increaseTailNum() {
+		String fileName = this.fileInfo.getFileName();
+		String regForTailNumber = "(?<=.{0,99}\\()\\d+(?=\\)$)";
+		String tailNumber = ComRegexUtil.getMatchedString(fileName, regForTailNumber);
+		String newFileName = null;
+		if(ComStrUtil.isBlankOrNull(tailNumber)) {
+			newFileName = fileName + " (1)";
+		} else {
+			int tailNumberInt = Integer.parseInt(tailNumber, 10);
+			newFileName = fileName.replaceFirst(regForTailNumber, tailNumberInt + 1 + "");
+		}
+//		ComLogUtil.info("newFileName: " + newFileName);
+		fileInfo.setFileName(newFileName);
 		return this;
 	}
 
@@ -67,5 +106,15 @@ public class FileName {
 		return new StringBuilder(fileInfo.getDir()).append(fileInfo.getFileName()).append(fileInfo.getFileExt()).toString();
 	}
 	
+	public File toFile() {
+		return new File(this.toString());
+	}
+	
+	
+	public static void main(String[] args) {
+//		System.out.println(new FileName("F:\\Downloads\\test\\Tokyo Hot jup0022  -.mp4").append("(1)"));
+//		System.out.println(new FileName("F:\\Downloads\\test\\Tokyo Hot jup0022  -.mp4").increaseTailNum());
+		System.out.println(new FileName("F:\\Downloads\\test\\Tokyo Hot jup0022  -.mp4").increaseTailNum().increaseTailNum());
+	}
 	
 }

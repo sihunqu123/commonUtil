@@ -119,7 +119,13 @@ public class ComLogUtil extends CommonUtil{
 	private static int printBeginIndex(StackTraceElement[] stes) {
 		int stackLevel = 1;
 		try {
-			while(!ComStrUtil.isBlankOrNull(ComRegexUtil.getMatchedString(stes[++stackLevel].getClassName(), "^(util|my|java)\\.")));
+			String className = null;
+			String matchedStr = null;
+			do {
+				stackLevel++;
+				className = stes[stackLevel].getClassName();
+				matchedStr = ComRegexUtil.getMatchedString(className, "^(util|my|java)\\.");
+			} while(!ComStrUtil.isBlankOrNull(matchedStr));
 		} catch (Exception e) {
 			stackLevel--;
 		}
@@ -130,6 +136,7 @@ public class ComLogUtil extends CommonUtil{
 	 * 打印日志
 	 * @param msg 要打印的消息
 	 * @param callerRange 第几层调用栈
+	 * @param level 0 for info; 1 for error.
 	 */
 	public static String printLog(String msg, Integer callerRange, int level) {
 		if(!chkPrint(msg)) return "";

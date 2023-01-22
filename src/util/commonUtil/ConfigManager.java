@@ -1,6 +1,8 @@
 package util.commonUtil;
 
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -104,7 +106,12 @@ public final class ConfigManager {
 			if(cachedProperties == null) {
 				try {
 					this.properties = new Properties();
-					this.properties.load(propertyURL.openStream());
+					
+//					this.properties.load(propertyURL.openStream());
+					// use InputStreamReader to resolve Chinese characters
+					// refer: https://stackoverflow.com/questions/30755014/reading-from-property-file-containing-utf-8-character
+					this.properties.load(new InputStreamReader(propertyURL.openStream(), Charset.forName("UTF-8")));
+					
 					cache.put(propertyURL.getPath(), properties);
 				} catch (Exception e) {
 					e.printStackTrace();

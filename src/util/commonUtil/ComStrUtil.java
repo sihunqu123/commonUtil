@@ -39,6 +39,17 @@ public class ComStrUtil extends CommonUtil{
 	public static boolean isBlankOrNull(Object obj) {
 		return isBlank(obj) || "null".equalsIgnoreCase(obj.toString().trim());
 	}
+	
+	/**
+	 * 
+	 * @author TianChen
+	 * @createdTime 2013-8-29 10:32am
+	 * @param String str
+	 * @return false:为空; true:不为空
+	 */
+	public static boolean hasContent(Object obj) {
+		return !isBlank(obj) && !"null".equalsIgnoreCase(obj.toString().trim());
+	}
 
 	/**
 	 * 得到一个随机的数字字母字符串
@@ -150,6 +161,8 @@ public class ComStrUtil extends CommonUtil{
 	    System.out.println(replaceLiteral("abcdefghijbckl", "bc", "*"));
 	    System.out.println(replaceAllLiteral("abcdefghijbckl", "bc", "*"));
 	    System.out.println(ComLogUtil.objToString(str2ListLiterally("ab$cd:ef\\ghi//k[lmn", "\\")));
+	    System.out.println((int) 'a');
+	    System.out.println((int) 'a' - 96);
 
 	}
 }

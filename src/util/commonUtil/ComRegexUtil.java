@@ -42,6 +42,46 @@ public class ComRegexUtil extends CommonUtil {
 		// System.out.println(sb.toString());
 		return sb.toString();
 	}
+	
+	/**
+	 *  CASE_INSENSITIVE replacement, escapsing the slash and dollarSign in the replacement
+	 * @param sourceStr
+	 * @param regex
+	 * @param replacement
+	 * @return
+	 */
+	public static String replaceByRegexI(String sourceStr, Object regex, String replacement) {
+		Matcher matcher = Pattern.compile(regex + "", Pattern.CASE_INSENSITIVE).matcher(sourceStr);
+		StringBuffer sb = new StringBuffer();
+		if (matcher.find()) { // 最多只匹配替换一次
+			matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement)); // 把从"上次替换处"到"当前匹配处"用replacement替换后的字符串输入到sb里去
+			// System.out.println(sb.toString());
+		}
+		// System.out.println(sb.toString());
+		matcher.appendTail(sb);// 把最后一次匹配之后的字符串也输入到sb里去
+		// StringBuffer sb2 = new StringBuffer();
+		// matcher.appendTail(sb2);//把最后一次匹配之后的字符串也输入到sb里去
+		// System.out.println(sb2.toString());
+		// System.out.println(sb.toString());
+		return sb.toString();
+	}
+	
+	/**
+	 *  CASE_INSENSITIVE replacement, without escapse the slash and dollarSign in the replacement
+	 * @param sourceStr
+	 * @param regex
+	 * @param replacement group
+	 * @return
+	 */
+	public static String replaceByRegexIGroup(String sourceStr, Object regex, String replacement) {
+		Matcher matcher = Pattern.compile(regex + "", Pattern.CASE_INSENSITIVE).matcher(sourceStr);
+		StringBuffer sb = new StringBuffer();
+		if (matcher.find()) {
+			matcher.appendReplacement(sb, replacement);
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
 
 	/**
 	 * 用指定replacement替换掉源字符串中匹配的部门(只匹配一次)
@@ -106,6 +146,14 @@ public class ComRegexUtil extends CommonUtil {
 			return matcher.group(0);
 		}
 		return "";
+	}
+	
+	public static Boolean test(String sourceStr, Object regex) {
+		Matcher matcher = Pattern.compile(regex + "", Pattern.DOTALL).matcher(sourceStr);
+		if (matcher.find()) {
+			return true;
+		}
+		return false;
 	}
 
 	/**

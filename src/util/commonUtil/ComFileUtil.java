@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.SortedMap;
 
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 import util.commonUtil.model.FileInfo;
 import util.commonUtil.model.FileName;
 
@@ -41,7 +42,7 @@ public class ComFileUtil extends CommonUtil{
 	/**
 	 * 取没有后缀的文件名 regex
 	 */
-	private static final String REGEXFILENAMENOEX_Windows = "(?<=\\\\?)(?!(.*\\\\.*))[^?\\\\\\.]*";
+	private static final String REGEXFILENAMENOEX_Windows = "(?<=\\\\?)(?!(.*\\\\.*))[^?\\\\]*(?=\\.[^.\\\\]+$)";
 
 
 
@@ -62,6 +63,26 @@ public class ComFileUtil extends CommonUtil{
 		return File.separator.equals("\\") ? REGEXFILENAMENOEX_Windows : REGEXFILENAMENOEX;
 	}
 
+	
+	public enum DupFileStatus {
+		/**
+		 * no duplicate suffix
+		 */
+		WITHOUT_DUP_SUFFIX,
+		/**
+		 * with duplicate suffix, but no duplicate file found
+		 */
+		WITH_DUP_SUFFIX_ONLY,
+		/**
+		 * with duplicate suffix, found duplicate file, but their sizes are different
+		 */
+		WITH_DIFFERENT_SIZE,
+		/**
+		 * with duplicate suffix, found duplicate file, and their sizes are the same
+		 */
+		WITH_SAME_SIZE
+	}
+	
 
     /**
      * copy file
@@ -91,6 +112,26 @@ public class ComFileUtil extends CommonUtil{
             if (fos != null) fos.close();
             byteBuf = null;
         }
+    }
+    
+    public static long getFileSizeByte(File file) {
+    	long bytes = file.length();
+		return bytes;
+    }
+    
+    public static long getFileSizeKB(File file) {
+    	long bytes = file.length();
+		long filesizeKB = bytes / (1024);
+		return filesizeKB;
+    }
+    
+    public static long getFileSizeMB(File file) {
+    	long bytes = file.length();
+		long filesizeMB = bytes / (1024 * 1024);
+//        System.out.println(String.format("%,d bytes", bytes));
+//        System.out.println(String.format("%,d kilobytes", bytes / 1024));
+//		System.out.println(String.format("%,d mb", filesizeMB));
+		return filesizeMB;
     }
 
     /**
@@ -252,6 +293,125 @@ public class ComFileUtil extends CommonUtil{
   public static String getFileExtension(String path, Boolean needDot) {
     return ComRegexUtil.getMatchedString(path, needDot ? "\\.(?!(.*\\..*)).*" : "(?<=\\.)(?!(.*\\..*)).*");
   }
+  
+  
+  private static DupFileStatus findDupStatus(File currientFile,  String originalFile, Integer dupSizeThrottleInKB) {
+	  File oriFile = new File(originalFile);
+
+	  if(oriFile.exists()) {
+		  Long sizeDiff = (oriFile.length() - currientFile.length());
+		  String msg = "origin/dupFile:\n" + currientFile.getPath() + ": " + ComFileUtil.getFileSizeKB(currientFile) + "KB" +  "\n" + oriFile.getPath() + ": " + ComFileUtil.getFileSizeKB(oriFile) + "KB";
+		  if(oriFile.length() == currientFile.length() || Math.abs(sizeDiff) < dupSizeThrottleInKB * 1024) {
+			  ComLogUtil.info("isDuplicateFile file exist and size diff(" + sizeDiff + "Bytes) is less than dupSizeThrottleInKB: " + dupSizeThrottleInKB + "KB. Should remove it - " + msg);
+			  return DupFileStatus.WITH_SAME_SIZE;
+		  } else {
+			  ComLogUtil.info("isDuplicateFile file exist, BUT size diff(" + sizeDiff + "Bytes) is greater than dupSizeThrottleInKB: " + dupSizeThrottleInKB + "KB. Should we remove it ??? - " + msg);
+			  return DupFileStatus.WITH_DIFFERENT_SIZE;
+		  }
+	  } else {
+//		  ComLogUtil.info("isDuplicateFile file not exist: " + oriFullPath);
+	  }
+	  return DupFileStatus.WITH_DUP_SUFFIX_ONLY;
+  }
+  
+  public static class DupFileRet {
+	  public DupFileStatus dupFileStatus;
+	  public File dupFile;
+	  
+	public DupFileRet(DupFileStatus dupFileStatus, File dupFile) {
+		super();
+		this.dupFileStatus = dupFileStatus;
+		this.dupFile = dupFile;
+	}
+	
+	public DupFileStatus getDupFileStatus() {
+		return dupFileStatus;
+	}
+	public void setDupFileStatus(DupFileStatus dupFileStatus) {
+		this.dupFileStatus = dupFileStatus;
+	}
+	public File getDupFile() {
+		return dupFile;
+	}
+	public void setDupFile(File dupFile) {
+		this.dupFile = dupFile;
+	}
+	  
+  }
+  
+  public static DupFileRet isDuplicateFile(File file, Integer dupSizeThrottleInKB) {
+	  // TODO: 
+	  FileInfo fileInfo = getFileInfo(file);
+	  String fileName = fileInfo.getFileName();
+	  String fileNameWithoutDupSuffix = ComRegexUtil.getMatchedString(fileName, ".+ ??(?= ?\\(\\d+\\)$)");
+	  
+	  
+	  if(fileNameWithoutDupSuffix.length() > 0) { // if suffix like ' (1)' found
+		  DupFileRet retVal = new DupFileRet(DupFileStatus.WITH_DUP_SUFFIX_ONLY, null);
+		  
+		  String fileNameWithoutDupSuffix4Pre = fileNameWithoutDupSuffix;
+		  Boolean hasDupfileWithDifferentSize = false;
+		  while(fileNameWithoutDupSuffix4Pre.length() > 0) {
+			  String filePath2Compare = fileInfo.getDir() + fileNameWithoutDupSuffix4Pre + fileInfo.getFileExt();
+			  DupFileStatus dupStatus = findDupStatus(file, filePath2Compare, dupSizeThrottleInKB);
+			  if(dupStatus == DupFileStatus.WITH_SAME_SIZE) {
+				  return new DupFileRet(DupFileStatus.WITH_SAME_SIZE, new File(filePath2Compare));
+			  } else if(dupStatus == DupFileStatus.WITH_DIFFERENT_SIZE) {
+				  hasDupfileWithDifferentSize = true;
+				  retVal.setDupFile(new File(filePath2Compare));
+			  }
+			  
+			  String fileNameWithoutDupSuffix4Tail = fileNameWithoutDupSuffix4Pre;
+			  // try with trailing space removed
+			  while(fileNameWithoutDupSuffix4Tail.length() > 0) {
+				  String filePathAnother = fileInfo.getDir() + fileNameWithoutDupSuffix4Tail + fileInfo.getFileExt();
+				  dupStatus = findDupStatus(file, fileInfo.getDir() + fileNameWithoutDupSuffix4Tail + fileInfo.getFileExt(), dupSizeThrottleInKB);
+				  
+				  if(dupStatus == DupFileStatus.WITH_SAME_SIZE) {
+					  return new DupFileRet(DupFileStatus.WITH_SAME_SIZE, new File(filePathAnother));
+				  } else if(dupStatus == DupFileStatus.WITH_DIFFERENT_SIZE) {
+					  hasDupfileWithDifferentSize = true;
+					  retVal.setDupFile(new File(filePathAnother));
+				  }
+				  
+				  if(fileNameWithoutDupSuffix4Tail.endsWith(" ")) {
+					  fileNameWithoutDupSuffix = fileNameWithoutDupSuffix.substring(1);
+				  } else {
+					  break;
+				  }
+				  fileNameWithoutDupSuffix4Tail = fileNameWithoutDupSuffix4Tail.substring(0, fileNameWithoutDupSuffix4Tail.length() - 1);
+			  }
+			  // try with prefix space removed
+			  if(fileNameWithoutDupSuffix4Pre.startsWith(" ")) {
+				  fileNameWithoutDupSuffix = fileNameWithoutDupSuffix.substring(1);
+			  } else {
+				  break;
+			  }
+		  }
+		  if(hasDupfileWithDifferentSize) {
+			  retVal.setDupFileStatus(DupFileStatus.WITH_DIFFERENT_SIZE);
+			  return retVal;
+		  } else {
+			  ComLogUtil.error("Has duplicate suffix, BUT no original file found, should we NOT remove it - " + file.getPath());
+			  return new DupFileRet(DupFileStatus.WITH_DUP_SUFFIX_ONLY, null);
+		  }
+	  }
+
+	  return new DupFileRet(DupFileStatus.WITHOUT_DUP_SUFFIX, null);
+  }
+  
+  
+  
+
+    /**
+     * move given file to it's parent folder. Note: 
+     * @param file the file to move
+     * @return
+     */
+	public static String mvToParent(File file) {
+//		return ComRegexUtil.getMatchedString(path, needDot ? "\\.(?!(.*\\..*)).*" : "(?<=\\.)(?!(.*\\..*)).*");
+		return "TODO";
+	}
 
   /**
    * get file extension
@@ -286,6 +446,47 @@ public class ComFileUtil extends CommonUtil{
 			fileName = ComRegexUtil.replaceByRegex(fileName, duplicateNumRegex, Integer.parseInt(duplicateNum) + 1 + "");
 		}
 		return ComRegexUtil.replaceByRegex(file, getRegexfilenamenoex(), fileName);
+	}
+	
+	public static String removeDuplicateFileNameNum(String file) throws Exception {
+		return removeDuplicateFileNameNum(new File(file));
+	}
+
+	/**
+	 * Remove unnecessary duplicate number from filename. 如:
+	 * "E:/eee/aaa(2).jpg" => "E:/eee/aaa.jpg"
+	 * "E:/eee/aaa (2).jpg" => "E:/eee/aaa.jpg"
+	 * "E:/eee/aaa (1)(2)" => ????
+	 * @param file 文件path
+	 * @return new file path
+	 * @throws Exception
+	 */
+	public static String removeDuplicateFileNameNum(File file) throws Exception {
+		FileName fileName = new FileName(file);
+		String duplicateNumRegex = "^.+?(?= {0,9}\\(\\d+\\)$)";
+		String fileNameWithoutDupSuffix = ComRegexUtil.getMatchedString(fileName.getFileNameOnly(), duplicateNumRegex);
+		String ret = fileName.setFileName(fileNameWithoutDupSuffix).toString();
+		return ret;
+	}
+	
+//	public static void doRename(boolean needToDo, File oldFile, File newFile) throws Exception {
+//		doRename(needToDo, oldFile, newFile, "");
+//	}
+	
+	public static void doRename(boolean needToDo, File oldFile, File newFile, String grepMark) throws Exception {
+		String msg = "rename [" + grepMark + "] from/to:\n" + oldFile.getPath() + "\n" + newFile.getPath();
+		if(needToDo) {
+			boolean renamed = oldFile.renameTo(newFile);
+			if(renamed) {
+				ComLogUtil.error(msg + " succeed");
+			} else {
+				ComLogUtil.error(msg + " failed");
+				throw new Exception(msg + " failed");
+			}
+		} else {
+			ComLogUtil.sysoCallStacks("needToRename??");
+			ComLogUtil.error("Need to " + msg);
+		}
 	}
 
 
@@ -514,6 +715,16 @@ Matcher matcher = Pattern.compile("(?is)\\]([^\\]]+)count").matcher(tar);
 	}
 
 	public static void main(String[] args) throws IOException {
+		String testStr = "a 123 b";
+		ComLogUtil.info(testStr.substring(1));
+		ComLogUtil.info(testStr.substring(0, testStr.length() - 1));
+		ComLogUtil.info(ComRegexUtil.getMatchedString("3 (1)", ".+(?= ?\\(\\d+\\)$)") + "end");
+		ComLogUtil.info(ComRegexUtil.getMatchedString("D:\\Downloads\\3g\\test2\\59部经典港台三级片 长期做种\\性火坑乳燕\\性火坑乳燕1.rm (1).rm", "(?<=\\\\?)(?!(.*\\\\.*))[^?\\\\]*(?=\\.[^.\\\\]+$)"));
+//		ComLogUtil.info("file1:" + file.getAbsolutePath()); // file1:F:\Downloads\toMove\Mini传媒\mini01
+//		ComLogUtil.info("file2:" + file.getName()); // file2:mini01
+//		ComLogUtil.info("file3:" + file.getPath()); // file3:F:\Downloads\toMove\Mini传媒\mini01
+		
+		
 		System.out.println(new File("c:\\sdf\\sfad\\sfd\\\\").getPath());
 	  System.out.println(ComLogUtil.objToString(System.getenv()));
 	  System.out.println(ComLogUtil.objToString(System.getProperties()));

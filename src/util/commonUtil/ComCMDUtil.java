@@ -17,7 +17,7 @@ public class ComCMDUtil {
 	 * @param out
 	 * @param errOut
 	 * @param inputEncoding
-	 * @return
+	 * @return cmd output
 	 * @throws Exception
 	 */
 	public static String runCMD(String cmd, OutputStream out, OutputStream errOut, String inputEncoding) throws Exception {

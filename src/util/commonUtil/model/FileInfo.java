@@ -15,7 +15,7 @@ public class FileInfo {
 	 */
 	public String dir;
 	/**
-	 * file directory. e.g: musicName
+	 * file name only. e.g: musicName
 	 */
 	public String fileName;
 	/**
@@ -40,7 +40,7 @@ public class FileInfo {
 	}
 
 	/**
-	 * get the fileName(extension not included). e.g. panda
+	 * get the fileName(extension not included). e.g. /opt/abc.txt => abc
 	 * @param fileName
 	 * @return fileName
 	 */

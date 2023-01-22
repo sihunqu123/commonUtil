@@ -69,6 +69,32 @@ public class ComCollectionUtil extends CommonUtil{
 		return obj instanceof Class ? (Class) obj : obj.getClass();  
 	}
 	
+	public static <T> String arrayJoin(T[] arr, String joiner) {
+		int length = arr.length;
+		StringBuffer retStr = new StringBuffer();
+		for(int i = 0; i < length; i++) {
+			T item = arr[i];
+			if(i != 0) {
+				retStr.append(joiner);
+			}
+			retStr.append(item);
+		}
+		return retStr.toString();
+	}
+	
+	public static <T> String arrayJoin(List<T> arr, String joiner) {
+		int length = arr.size();
+		StringBuffer retStr = new StringBuffer();
+		for(int i = 0; i < length; i++) {
+			T item = arr.get(i);
+			if(i != 0) {
+				retStr.append(joiner);
+			}
+			retStr.append(item);
+		}
+		return retStr.toString();
+	}
+	
 	/**
 	 * 
 	 * @param colletion
