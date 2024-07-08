@@ -56,31 +56,78 @@ public class FileName {
 		this.fileInfo.setFileName(str);
 		return this;
 	}
+	
+	/**
+	 * set the filename and ext part. e.g. a.txt setFileName("b.log") => b.log
+	 * @param str
+	 * @return
+	 */
+	public FileName setFileNameAndExt(String str) {
+		String fileNameOnly = ComFileUtil.getFileName(str, false);
+		String ext = ComFileUtil.getFileExtension(str, true);
+		this.setFileName(fileNameOnly);
+		this.setExt(ext);
+		return this;
+	}
 
 	public String getFileNameOnly() {
 		return fileInfo.getFileName();
 	}
 	
+	/**
+	 * get the filename and ext part. e.g.  a.txt
+	 * @return e.g: a.txt
+	 */
 	public String getFileNameAndExtension() {
 		return fileInfo.getFileName() + fileInfo.getFileExt();
 	}
 	
+	/**
+	 * set file extension including dot.
+	 * @param ext both withDot and withoutDot are OK.
+	 * @return
+	 */
 	public FileName setExt(String ext) {
 		this.fileInfo.setFileExt(ext);
 		return this;
 	}
 	
+	/**
+	 * file extension including dot. e.g: .txt  .java
+	 */
 	public String getExt() {
 		return this.fileInfo.getFileExt();
 	}
+	
 	
 	public String getExt(boolean needDot) {
 		return this.fileInfo.getFileExt(needDot);
 	}
 	
+	/**
+	 * 
+	 * @return file directory including '/' at the end. e.g: e:/music/
+	 */
 	public String getDir() {
 		return this.fileInfo.getDir();
 	}
+	
+	/**
+	 * 
+	 * @param dir file directory including '/' at the end. e.g: e:/music/
+	 */
+	public void setDir(String dir) {
+		this.fileInfo.setDir(dir);
+	}
+	
+	/**
+	 * 
+	 * @return file directory including '/' at the end. e.g: e:/music/
+	 */
+	public String getDisk() {
+		return this.fileInfo.getDisk();
+	}
+	
 	
 	public FileName increaseTailNum() {
 		String fileName = this.fileInfo.getFileName();
@@ -97,9 +144,18 @@ public class FileName {
 		fileInfo.setFileName(newFileName);
 		return this;
 	}
+	
+	
+	/**
+	 * get the full file path. e.g. E:\Downloads\a.mp4
+	 * @return
+	 */
+	public String getFullPathName() {
+		return this.toString();
+	}
 
 	/**
-	 * @return the full file path.
+	 * @return the full file path. e.g. E:\Downloads\a.mp4
 	 */
 	@Override
 	public String toString() {

@@ -3,6 +3,8 @@ package util.commonUtil.model;
 import java.io.File;
 
 import util.commonUtil.ComFileUtil;
+import util.commonUtil.ComLogUtil;
+import util.commonUtil.ComRegexUtil;
 
 /**
  * An entity of file directory, fileName and file extension
@@ -10,6 +12,12 @@ import util.commonUtil.ComFileUtil;
  *
  */
 public class FileInfo {
+	/**
+	 * e:/music => e:
+	 * /opt/abc.txt => /opt
+	 */
+	public String disk;
+	
 	/**
 	 * file directory including '/' at the end. e.g: e:/music/
 	 */
@@ -24,20 +32,46 @@ public class FileInfo {
 	public String fileExt;
 
 	public FileInfo(String dir, String fileName, String fileExt) {
-		this.dir = dir;
+		setDir(dir);
 		if(!dir.endsWith(ComFileUtil.SEPARATOR)) this.dir += ComFileUtil.SEPARATOR;
 
 		this.fileName = fileName;
 		setFileExt(fileExt);
 	}
+	
 
+	/**
+	 * 
+	 * @return file directory including '/' at the end. e.g: e:/music/
+	 */
 	public String getDir() {
 		return dir;
 	}
 
+
+	/**
+	 * 
+	 * @param dir file directory including '/' at the end. e.g: e:/music/
+	 */
 	public void setDir(String dir) {
 		this.dir = dir;
+		if(ComRegexUtil.testIg(dir, "^[a-z]:([/\\\\]|$)")) {
+			this.disk = ComRegexUtil.getMatchedStringIg(dir, "^[a-z]:");
+		} else if(ComRegexUtil.testIg(dir, "^/[^/]+")) {
+			this.disk = ComRegexUtil.getMatchedStringIg(dir, "^/[^/]+)");
+		} else {
+			ComLogUtil.debug("cannot detect the disk for this dir: " + dir);
+		}
 	}
+	
+	/**
+	 * e:/music => e:
+	 * /opt/abc.txt => /opt
+	 */
+	public String getDisk() {
+		return disk;
+	}
+
 
 	/**
 	 * get the fileName(extension not included). e.g. /opt/abc.txt => abc

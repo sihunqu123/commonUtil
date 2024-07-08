@@ -1,5 +1,6 @@
 package util.commonUtil;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -154,6 +155,43 @@ public class ComStrUtil extends CommonUtil{
 	public static List<String> str2ListLiterally(String str, String splitMark) {
 		return new ArrayList<String>(Arrays.asList(splitLiterally(str, splitMark)));
 	}
+	
+	/**
+	 * Byte to man readable string
+	 * @param bytes
+	 * @param is1024
+	 * @return
+	 */
+	public static String humanByte(Integer bytes, Boolean is1024) {
+		Long l = new Long(bytes);
+	    return humanByte(l, is1024);
+	}
+	
+	/**
+	 * Byte to man readable string
+	 * @param bytes
+	 * @param is1024
+	 * @return
+	 */
+	public static String humanByte(Long bytes, Boolean is1024) {
+		
+		int thresh = is1024 ? 1000 : 1024;
+	    if(Math.abs(bytes) < thresh) {
+	        return bytes + " B";
+	    }
+	    String[] unit1024 = new String[] { "kB","MB","GB","TB","PB","EB","ZB","YB" };
+	    String[] unit1000 = new String[] { "KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB" };
+	    String[] units = is1024
+	        ? unit1024
+	        : unit1000;
+	    int u = -1;
+	    Double bd  = Double.parseDouble(bytes + "");
+	    do {
+	    	bd /= thresh;
+	        ++u;
+	    } while(Math.abs(bd) >= thresh && u < units.length - 1);
+	    return ComNumUtil.number2String(bd, 1)+' '+units[u];
+	}
 
 	public static void main(String[] args) {
 		System.out.println("ab$cd".indexOf("$"));
@@ -165,4 +203,6 @@ public class ComStrUtil extends CommonUtil{
 	    System.out.println((int) 'a' - 96);
 
 	}
+	
+	
 }

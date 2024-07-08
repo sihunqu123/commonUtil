@@ -32,6 +32,17 @@ import java.util.logging.Logger;
 public abstract class ProjectUtil{
   // public static Logger log = Logger.getLogger(new CommonUtil().getClass());
 	
-	
+	public static void main(String[] args) {
+		System.out.println("file:///e/p/a.java");
+		System.out.println("file:///e/p/");
+		System.out.println("https://www.baidu.com");
+		System.out.println("file:///e/a.txt not ab");
+		System.out.println("file:///e/a.txt Not ab");
+		System.out.println("[ERROR] file:///e/p/");
+		System.out.println("[WARN] file:///e/p url");
+		System.out.println("[DEBUG] file:///e/p openFolderAndSelect.bat arg");
+		System.out.println("[FATAL] file:///e/p command");
+		System.out.println("[ERROR] file:///e/p/a.txt");
+	}
 	
 }

@@ -98,6 +98,15 @@ public class ComLogUtil extends CommonUtil{
 	 * @param msg 要打印的消息
 	 */
 	public static void info(Object msg) {
+//		sysoCallStacks("debugInfo");
+		printLog(msg + "", STACKLEVEL, 0);
+	}
+	
+	/**
+	 * 打印日志
+	 * @param msg 要打印的消息
+	 */
+	public static void debug(Object msg) {
 		printLog(msg + "", STACKLEVEL, 0);
 	}
 	
@@ -150,9 +159,11 @@ public class ComLogUtil extends CommonUtil{
 			//fileName = sysoCallStacks("NoFileName");
 			className = "NoClassName";
 		}
-		String str = new StringBuilder("[").append(ct.getName()).append(":").append(ct.getId())
-				.append('|').append(Thread.currentThread().getContextClassLoader())
-				.append(']')
+		String str = new StringBuilder("")
+				// TODO: un-comment below 3 lies to enable thread info
+//				.append("[").append(ct.getName()).append(":").append(ct.getId())
+//				.append('|').append(Thread.currentThread().getContextClassLoader())
+//				.append(']')
 				.append('(').append(className).append(".").append(ste.getMethodName()).append("():").append(ste.getLineNumber()).append(") ").append(ComDateUtil.getDateLong()).append(" - ").append(msg).toString();
 		if(level == 0) {
 			info.println(str);

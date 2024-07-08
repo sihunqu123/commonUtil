@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import util.commonUtil.model.CheckResult;
+import util.commonUtil.model.RegRule;
+
 /**
  * Regex相关操作
  */
@@ -44,7 +47,7 @@ public class ComRegexUtil extends CommonUtil {
 	}
 	
 	/**
-	 *  CASE_INSENSITIVE replacement, escapsing the slash and dollarSign in the replacement
+	 *  CASE_INSENSITIVE replacement, escaping the slash and dollarSign in the replacement
 	 * @param sourceStr
 	 * @param regex
 	 * @param replacement
@@ -52,6 +55,7 @@ public class ComRegexUtil extends CommonUtil {
 	 */
 	public static String replaceByRegexI(String sourceStr, Object regex, String replacement) {
 		Matcher matcher = Pattern.compile(regex + "", Pattern.CASE_INSENSITIVE).matcher(sourceStr);
+//		Matcher matcher = Pattern.compile(regex + "").matcher(sourceStr);
 		StringBuffer sb = new StringBuffer();
 		if (matcher.find()) { // 最多只匹配替换一次
 			matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement)); // 把从"上次替换处"到"当前匹配处"用replacement替换后的字符串输入到sb里去
@@ -77,7 +81,42 @@ public class ComRegexUtil extends CommonUtil {
 		Matcher matcher = Pattern.compile(regex + "", Pattern.CASE_INSENSITIVE).matcher(sourceStr);
 		StringBuffer sb = new StringBuffer();
 		if (matcher.find()) {
-			matcher.appendReplacement(sb, replacement);
+			try {
+				matcher.appendReplacement(sb, replacement);
+			} catch (Exception e) {
+				ComLogUtil.error("replaceByRegexIGroup failed. "
+						+ " sourceStr:" + sourceStr
+						+ " regex:" + regex
+						+ " replacement:" + replacement
+						);
+				throw e;
+			}
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
+	
+	/**
+	 *  CASE SENSITIVE replacement, without escapse the slash and dollarSign in the replacement
+	 * @param sourceStr
+	 * @param regex
+	 * @param replacement group
+	 * @return
+	 */
+	public static String replaceByRegexGroup(String sourceStr, Object regex, String replacement) {
+		Matcher matcher = Pattern.compile(regex + "").matcher(sourceStr);
+		StringBuffer sb = new StringBuffer();
+		if (matcher.find()) {
+			try {
+				matcher.appendReplacement(sb, replacement);
+			} catch (Exception e) {
+				ComLogUtil.error("replaceByRegexIGroup failed. "
+						+ " sourceStr:" + sourceStr
+						+ " regex:" + regex
+						+ " replacement:" + replacement
+						);
+				throw e;
+			}
 		}
 		matcher.appendTail(sb);
 		return sb.toString();
@@ -148,6 +187,23 @@ public class ComRegexUtil extends CommonUtil {
 		return "";
 	}
 	
+	/**
+	 * 从字符串中得到匹配的第一个子字符串 ignorecase
+	 *
+	 * @param sourceStr
+	 *            被用来匹配的源字符串
+	 * @param regex
+	 *            去匹配的regex字符串
+	 * @return
+	 */
+	public static String getMatchedStringIg(String sourceStr, Object regex) {
+		Matcher matcher = Pattern.compile(regex + "", Pattern.CASE_INSENSITIVE).matcher(sourceStr);
+		if (matcher.find()) {
+			return matcher.group(0);
+		}
+		return "";
+	}
+	
 	public static Boolean test(String sourceStr, Object regex) {
 		Matcher matcher = Pattern.compile(regex + "", Pattern.DOTALL).matcher(sourceStr);
 		if (matcher.find()) {
@@ -155,7 +211,64 @@ public class ComRegexUtil extends CommonUtil {
 		}
 		return false;
 	}
+	
+	/**
+	 * 
+	 * @param sourceStr
+	 * @param regRules
+	 * @return {
+	 * 	result: 1 for matched.
+	 *  reason: the reg that matched.
+	 * }
+	 */
+	public static CheckResult testRegs(String sourceStr, RegRule[] regRules) {
+		
+		for(int i = 0; i < regRules.length; i++) {
+			RegRule currentRule = regRules[i];
+			String currentReg = currentRule.getReg();
+			Boolean isCaseSensitive = currentRule.getIsCaseSensitive();
+			
+//			if(currentReg.indexOf("rarbg") > -1) {
+//				ComLogUtil.info("oriAbsPath: " + oriAbsPath + ", currentReg:" + currentReg);
+//			}
+			
+//			ComLogUtil.info("oriAbsPath: " + oriAbsPath + ", currentReg:" + currentReg);
+			
+			boolean isMatched = false;
+			
+			try {
+				if(isCaseSensitive) {
+					isMatched = ComRegexUtil.test(sourceStr, currentReg);
+				} else {
+					isMatched = ComRegexUtil.testIg(sourceStr, currentReg);
+				}
 
+				if(isMatched) return new CheckResult(1, currentReg);
+			} catch(Exception e) {
+				ComLogUtil.error("regex error on:" + currentReg);
+				throw e;
+			}
+			
+		}
+		return new CheckResult(0, "");
+	}
+	
+	
+	
+	/**
+	 * test ignore case
+	 * @param sourceStr
+	 * @param regex
+	 * @return
+	 */
+	public static Boolean testIg(String sourceStr, Object regex) {
+		Matcher matcher = Pattern.compile(regex + "", Pattern.CASE_INSENSITIVE).matcher(sourceStr);
+		if (matcher.find()) {
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * 从字符串中得到匹配的第一个子字符串
 	 *
@@ -199,7 +312,15 @@ public class ComRegexUtil extends CommonUtil {
 	}
 
 	public static void main(String[] args) throws Exception {
-
+		System.out.println(ComRegexUtil.replaceByRegex("T:\\toMove\\VR\\SLROriginals\\SLR_Originals-All_the_News_thats_Fit_to_Fuck_original_26630_MKX200.mp4", "(?<=\\\\)SLROriginals[-_ ][^\\\\\\//]+$", "SLR_Originals"));
+		System.out.println(ComRegexUtil.replaceByRegex("T:\\toMove\\VR\\SLROriginals\\SLR_Originals-All_the_News_thats_Fit_to_Fuck_original_26630_MKX200.mp4", "(?<=\\\\)SLROriginals[-_ ][^\\\\\\//]+$", "SLR_Originals"));
+		System.out.println(ComRegexUtil.replaceByRegex("T:\\toMove\\VR\\SLROriginals\\SLR_Originals-All_the_News_thats_Fit_to_Fuck_original_26630_MKX200.mp4", "(?<=\\\\)SLROriginals(?=[ -_][^\\\\]+$)", "SLR_Originals"));
+		System.out.println(ComRegexUtil.replaceByRegexGroup("T:\\toMove\\VR\\SLROriginals\\SLR_Originals-All_the_News_thats_Fit_to_Fuck_original_26630_MKX200.mp4", "(?<=\\\\)SLROriginals(?=[ -_][^\\\\]+$)", "SLR_Originals"));
+		System.out.println(ComRegexUtil.replaceByRegexI("T:\\toMove\\VR\\SLROriginals\\SLR_Originals-All_the_News_thats_Fit_to_Fuck_original_26630_MKX200.mp4", "(?<=\\\\)SLROriginals[ -_]{1,99}$", "aaaa"));
+		System.out.println(ComRegexUtil.replaceByRegexIGroup("T:\\toMove\\VR\\SLROriginals\\SLR_Originals-All_the_News_thats_Fit_to_Fuck_original_26630_MKX200.mp4", "(?<=\\\\)SLROriginals[ -_]{1,99}$", "aaaa"));
+		System.out.println(ComRegexUtil.getMatchedString("hhd800.com@aqube00028.part1.mp4", "(?<=.{1,150}[-_. ]{1,9}(part|R))\\d{1,2}.mp4$"));
+		System.out.println(ComRegexUtil.getMatchedString("hhd800.com@aqube00028.R1.mp4", "(?<=.{1,150}[-_.]{1,9}(part|R))\\d{1,2}.mp4$"));
+		
 		System.out.println(Matcher.quoteReplacement("\\\\"));
 		System.out.println(replaceAllLiterally("abcdefgbchij", "bc", "*"));
 		if(true) return;

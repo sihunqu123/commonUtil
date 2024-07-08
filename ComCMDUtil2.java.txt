@@ -9,7 +9,7 @@ import java.io.OutputStreamWriter;
 
 import util.commonUtil.model.SyncPipe;
 
-public class ComCMDUtil {
+public class ComCMDUtil2 {
 
 	/**
 	 * this method fit for complicate cmd, but have encoding issue.
@@ -42,7 +42,7 @@ public class ComCMDUtil {
 		bw.close();
 		// write any other commands you want here
 		int returnCode = p.waitFor();
-//		ComLogUtil.debug("CMD Return code = " + returnCode);
+		ComLogUtil.debug("CMD Return code = " + returnCode);
 		return sb.toString();
 	}
 
@@ -75,8 +75,8 @@ public class ComCMDUtil {
 	}
 
 	public static String runCMD(String cmd) throws Exception {
-//		return runCMD(cmd, null, null, ComFileUtil.UTF8);
-		return runCMD(cmd, null, null, ComFileUtil.GBK);
+		return runCMD(cmd, null, null, ComFileUtil.UTF8);
+//		return runCMD(cmd, null, null, ComFileUtil.GBK);
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -91,8 +91,9 @@ public class ComCMDUtil {
 			System.out.println("res:" + runCMD("echo \"志村けんのバカ殿\" \n  chcp 936 \n echo \"志村けんのバカ殿\"\n "));
 			System.out.println("res:" + runCMD("chcp"));
 			System.out.println("res:" + runCMD("dir /d F:\\f8"));
-			System.out.println("res:" + runCMD("dir /d F:\\f8\\����ר��"));
+			System.out.println("res:" + runCMD("dir /d F:\\f8\\歌手专辑"));
 //			System.out.println("res:" + runCMD("dir /b", System.out, System.err));
+//			System.out.println(runCMD("chcp 936 \n cd \\d \"E:\\Downloads\\download2\\(無修正 流出) FC2 PPV 944097 (UNCENSORED Leaked) 素人 无修正流出动画\""));
 			
 //			String cmd = ComFileUtil.readFile2String("E:\\360CloudUI\\temp\\cmd.txt");
 //			System.out.println(cmd);
@@ -116,6 +117,7 @@ public class ComCMDUtil {
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream(), encode));
 //		bw.write("chcp\n");
 		bw.write(cmd);
+//		bw.write("echo \"【ｾｸｼｰｺﾝﾄ総集編】志村けんのバカ殿様 最も再生されているセクシーネタ動画\"\n");
 		bw.flush();
 		bw.close();
 //		PrintWriter stdin = new PrintWriter(p.getOutputStream());

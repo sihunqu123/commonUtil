@@ -27,6 +27,9 @@ public class ComFileUtil extends CommonUtil{
 
 
 	public static final String UTF8 = "utf-8";
+	
+	public static final String GBK = "gbk";
+	
 	/**
 	 * 取有后缀的文件名 regex
 	 */
@@ -133,7 +136,12 @@ public class ComFileUtil extends CommonUtil{
 //		System.out.println(String.format("%,d mb", filesizeMB));
 		return filesizeMB;
     }
-
+    
+    public static String getFileSizeReadable(File file) {
+    	long fileSizeByte = getFileSizeByte(file);
+    	return ComStrUtil.humanByte(fileSizeByte, true);
+    }
+    
     /**
      * 删除文件或文件夹(慎用!!!! 若文件名写掉了只剩一个文件夹, 则该文件夹会被删掉!!!)
      * @param file 要删除的文件或目录
@@ -295,17 +303,17 @@ public class ComFileUtil extends CommonUtil{
   }
   
   
-  private static DupFileStatus findDupStatus(File currientFile,  String originalFile, Integer dupSizeThrottleInKB) {
+  private static DupFileStatus findDupStatus(File currientFile,  String originalFile, Long dupSizeThrottleInKB) {
 	  File oriFile = new File(originalFile);
 
 	  if(oriFile.exists()) {
 		  Long sizeDiff = (oriFile.length() - currientFile.length());
-		  String msg = "origin/dupFile:\n" + currientFile.getPath() + ": " + ComFileUtil.getFileSizeKB(currientFile) + "KB" +  "\n" + oriFile.getPath() + ": " + ComFileUtil.getFileSizeKB(oriFile) + "KB";
+		  String msg = "origin/dupFile:\n" + currientFile.getPath() + ": " + ComFileUtil.getFileSizeReadable(currientFile) + "" +  "\n" + oriFile.getPath() + ": " + ComFileUtil.getFileSizeReadable(oriFile) + "";
 		  if(oriFile.length() == currientFile.length() || Math.abs(sizeDiff) < dupSizeThrottleInKB * 1024) {
-			  ComLogUtil.info("isDuplicateFile file exist and size diff(" + sizeDiff + "Bytes) is less than dupSizeThrottleInKB: " + dupSizeThrottleInKB + "KB. Should remove it - " + msg);
+			  ComLogUtil.info("isDuplicateFile file exist and size diff(" + ComStrUtil.humanByte(sizeDiff, true)  + ") is less than dupSizeThrottleInKB: " + ComStrUtil.humanByte(dupSizeThrottleInKB, true) + ". Should remove it - " + msg);
 			  return DupFileStatus.WITH_SAME_SIZE;
 		  } else {
-			  ComLogUtil.info("isDuplicateFile file exist, BUT size diff(" + sizeDiff + "Bytes) is greater than dupSizeThrottleInKB: " + dupSizeThrottleInKB + "KB. Should we remove it ??? - " + msg);
+			  ComLogUtil.info("isDuplicateFile file exist, BUT size diff(" + ComStrUtil.humanByte(sizeDiff, true) + ") is greater than dupSizeThrottleInKB: " + ComStrUtil.humanByte(dupSizeThrottleInKB, true) + ". Should we remove it ??? - " + msg);
 			  return DupFileStatus.WITH_DIFFERENT_SIZE;
 		  }
 	  } else {
@@ -339,11 +347,11 @@ public class ComFileUtil extends CommonUtil{
 	  
   }
   
-  public static DupFileRet isDuplicateFile(File file, Integer dupSizeThrottleInKB) {
+  public static DupFileRet isDuplicateFile(File file, Long dupSizeThrottleInKB) {
 	  // TODO: 
 	  FileInfo fileInfo = getFileInfo(file);
 	  String fileName = fileInfo.getFileName();
-	  String fileNameWithoutDupSuffix = ComRegexUtil.getMatchedString(fileName, ".+ ??(?= ?\\(\\d+\\)$)");
+	  String fileNameWithoutDupSuffix = ComRegexUtil.getMatchedString(fileName, ".+ ??(?= ?\\(\\d{1,3}\\)$)");
 	  
 	  
 	  if(fileNameWithoutDupSuffix.length() > 0) { // if suffix like ' (1)' found
@@ -484,8 +492,26 @@ public class ComFileUtil extends CommonUtil{
 				throw new Exception(msg + " failed");
 			}
 		} else {
-			ComLogUtil.sysoCallStacks("needToRename??");
+//			ComLogUtil.sysoCallStacks("needToRename??");
 			ComLogUtil.error("Need to " + msg);
+		}
+	}
+	
+	public static void ensureDir(boolean needToDo, File dir, String grepMark) throws Exception {
+		String msg = "ensure dir [" + grepMark + "]: " + dir;
+		if(!dir.exists()) {
+			if(needToDo) {
+				boolean changed = dir.mkdirs();
+				if(changed) {
+					ComLogUtil.error(msg + " succeed");
+				} else {
+					ComLogUtil.error(msg + " failed");
+					throw new Exception(msg + " failed");
+				}
+			} else {
+//			ComLogUtil.sysoCallStacks("needToRename??");
+				ComLogUtil.error("Need to " + msg);
+			}
 		}
 	}
 
