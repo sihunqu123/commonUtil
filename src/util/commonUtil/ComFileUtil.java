@@ -2,6 +2,8 @@
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedMap;
 
 import jdk.nashorn.internal.runtime.regexp.joni.Regex;
@@ -738,6 +740,44 @@ Matcher matcher = Pattern.compile("(?is)\\]([^\\]]+)count").matcher(tar);
 //			throw new IOException("dir invalid file:" + file + " diretory:" + diretory);
 //		}
 
+	}
+	
+	public static File[] convertToArrDir(String folderStr) {
+		String[] dirsStr = folderStr.split(",");
+		File[] dirs = new File[dirsStr.length];
+		for(int i = 0; i < dirs.length; i++) {
+			dirs[i] = new File(dirsStr[i]); 
+		}
+		return dirs;
+	}
+	
+	public static List<File> unionDirs(File[] dirs) throws Exception {
+		List<File> files = new ArrayList<File>();
+		for(int h = 0; h < dirs.length; h++) {
+			File dir = dirs[h];
+			File[] dirFiles = dir.listFiles();
+			if(dirFiles == null) {
+				ComLogUtil.error("listed files is null, maybe the explorer.exe is hold the handler of this empty dir. dir:" + dir);
+				continue;
+			}
+			if(dirFiles.length == 0) {
+				ComLogUtil.error("empty dir:" + dir);
+				continue;
+			} else {
+//        	ComLogUtil.info("won't remove this none-empty dir:" + dir);
+				// add dirFiels into files to later operation
+				for(int m = 0; m < dirFiles.length; m++) {
+					File dirFile = dirFiles[m];
+					if(files.contains(dirFile)) {
+						// dup file detected.
+						ComLogUtil.error("dup file detected:" + dirFile);
+					} else {
+						files.add(dirFile);
+					}
+				}
+			}
+		}
+		return files;
 	}
 
 	public static void main(String[] args) throws IOException {
